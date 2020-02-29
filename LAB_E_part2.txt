@@ -1,0 +1,48 @@
+// EECS 3215 Lab E, Part 2
+// User button is on PIO0_8 (GPIO 8)
+// LED is PIO0_9 (GPIO 9)
+
+#include "LPC802.h"
+
+#define LED   (9) // One of the LED (PIO0_9)
+#define BUTTON_USER1 (8)  // GPIO 8 (PIO0_8) is connected to the LED.
+
+int main(void){
+	// GPIO module turned on
+	SYSCON ->SYSAHBCLKCTRL0 |= (SYSCON_SYSAHBCLKCTRL0_GPIO0_MASK); //GPIO ON
+
+	// Put 0 in the GPIO reset bit to reset it.
+	// Then put a 1 in the GPIO  reset bit to allow it to operate
+
+	SYSCON->PRESETCTRL0 &= ~(SYSCON_PRESETCTRL0_GPIO0_RST_N_MASK);  // bit to 0 (reset)
+	SYSCON->PRESETCTRL0 |= (SYSCON_PRESETCTRL0_GPIO0_RST_N_MASK); // bit to 1 (set)
+
+	// Config the Pushbutton (GPIO 8) for input and LED (GPIO 9) for output
+	// Remember:  only bits set to 1 have an effect on DIRCLR and DIRSET registers.
+	// bits cleared to 0 are ignored.
+	// Therefore, use DIRCLR to select input and DIRSET to select output
+	GPIO->DIRCLR[0] = (1UL<<BUTTON_USER1); // input on GPIO 8 (BUTTON_USER1)
+    GPIO->CLR[0]  = (1UL<<LED); // pre-emptive turning off the LED
+    GPIO->DIRSET[0] = (1UL<<LED);// output on the LED
+
+    // Create a blocking loop
+    while(1)              //****do step though to see while statment
+    {
+    	// check GPIO0 Byte register 8 for value on PIO0_8
+    		if(GPIO->B[0][BUTTON_USER1] & 1)  // is it high?
+    		{
+    		      //turn led on
+    			GPIO->CLR[0] = (1UL<<LED);    //not presseed
+    		}
+    		else // button is "low"
+    		{
+    			GPIO->SET[0] = (1UL<<LED);
+    		}
+    }
+    return 0;
+
+}
+
+// this program has green on and when "user" button is pressed it toggles blue on, green off and
+// vice versa
+
