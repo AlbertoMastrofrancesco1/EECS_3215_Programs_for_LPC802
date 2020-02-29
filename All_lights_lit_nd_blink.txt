@@ -1,0 +1,58 @@
+//This code makes all 3 lights (green, red, blue) blink
+
+#include "LPC802.h"
+
+#define LED_USER1a (9) //led green     "   "
+#define LED_USER1b (12) // green   *green circle
+#define LED_USER1c (7) //green         "   "
+#define LED_USER2 (8) //led blue
+#define LED_USER3 (17) // red  *red circle
+
+
+int main(void)
+{
+	SYSCON->SYSAHBCLKCTRL0 |= (SYSCON_SYSAHBCLKCTRL0_GPIO0_MASK);
+
+	// Set data direction on
+  // GPIO*ON* to Output.
+	GPIO->DIRSET[0] = (1UL<<LED_USER1a);
+	GPIO->DIRSET[0] = (1UL<<LED_USER1b);
+	GPIO->DIRSET[0] = (1UL<<LED_USER1c);
+	GPIO->DIRSET[0] = (1UL<<LED_USER2);
+	GPIO->DIRSET[0] = (1UL<<LED_USER3);
+
+
+  // Turn on the LED. (*red grreen blue*)
+	GPIO->CLR[0] = (1UL<<LED_USER1a);
+	GPIO->CLR[0] = (1UL<<LED_USER1b);
+	GPIO->CLR[0] = (1UL<<LED_USER1c);
+	GPIO->CLR[0] = (1UL<<LED_USER2);
+	GPIO->CLR[0] = (1UL<<LED_USER3);
+
+
+
+  // loop infinitely
+  while(1)
+  {   //                                                                    |                                                                                                                           |
+	  delay();   //blink red green blue led on and off @ time defined below V
+	 GPIO->NOT[0] = (1UL<<LED_USER1a);
+	 GPIO->NOT[0] = (1UL<<LED_USER1b);
+	 GPIO->NOT[0] = (1UL<<LED_USER1c);
+	 GPIO->NOT[0] = (1UL<<LED_USER2);
+	 GPIO->NOT[0] = (1UL<<LED_USER3);
+
+  }
+
+
+} // end of main
+
+
+void delay(void)    // blink_time of delay
+{
+	int a = 0;
+	for( a = 0; a < 500000; a = a + 1 )  // change a < #; for speed
+	{
+		asm("NOP");
+	}
+}
+
