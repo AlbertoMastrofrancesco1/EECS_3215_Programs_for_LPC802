@@ -1,0 +1,100 @@
+/* systick_irq_with_fro_set   *** SYSTICK  ***
+
+Set up GPIO for LEDs
+Have SysTick flash an LED on a regular basis
+SysTick IRQ freq is 5Hz (0.2 sec period)
+LED freq is 2.5Hz (0.4 sec period)
+*/
+
+#include "LPC802.h"
+#include "clock_config.h"
+
+
+//#define LED_USER1 (8) // Blue LED
+//#define LED_USER2 (9) // Green LED
+#define LED_USER3 (17) // RED CIRCLE
+
+int main(void) {
+	//disable interupts, global (all) and SysTick (specificly)
+	__disable_irq();    // turn off globally
+	NVIC_DisableIRQ(SysTick_IRQn);   //turn off SysTick interrupt
+
+	// ----------------------- Begin Core Clock Select  ----------------------
+	// Specify that we will use the Free-Running Oscillator
+	// Set the main clock to be the FRO. 0x0 is FRO; 0x1 is external clock;
+	// 0x2 is Low pwr osc.; 0x3 is FRO_DIV. Place in bits 1:0 of MAINCLKSEL.
+	SYSCON->MAINCLKSEL = (0x0<<SYSCON_MAINCLKSEL_SEL_SHIFT);
+
+	// Update the Main Clock
+	SYSCON->MAINCLKUEN &= ~(0x1); // Step 1. write 0 to bit 0 of this register
+	SYSCON->MAINCLKUEN |= 0x1; // Step 2. write 1 to bit 0 this register
+
+	// Set the FRO frequency (clock_config.h in SDK)
+	// For FRO at 9MHz: BOARD_BootClockFRO18M();
+	// For FRO 12MHz: BOARD_BootClockFRO24M(); ***
+	// For FRO 15MHz: BOARD_BootClockFRO30M();
+	BOARD_BootClockFRO24M();
+
+	//------------------END OF CORE CLOCK SELECT--------------
+
+	// ----------------------- Begin SysTick setup -----------------------
+	// Configure SysTick to fire once every 0.2 seconds.
+	// Argument is the number of clock ticks between IRQs
+
+	// Clock rate: 12 MHz via FRO. (8.3*10^(-8) sec period)
+	// 12,000,000 ticks/sec * 0.2 sec = 2400000 ticks
+	// SysTick is a 24 bit timer (max almost 17 million)
+	SysTick_Config(2400000);  // 2400000 ticks = 0.2 sec @ 12 MHz
+
+	// ----------------------- End SysTick setup -----------------------
+
+	// ----------------------- Begin GPIO setup ----------------------------------
+	// Set up a general GPIO  (PB8 & PB9)
+	SYSCON->SYSAHBCLKCTRL0 |= (SYSCON_SYSAHBCLKCTRL0_GPIO0_MASK);  // GPIO is on
+
+	// Put 0 in the GPIO reset bit to reset it.
+	// Then put a 1 in the GPIO reset bit to allow it to operate.
+	SYSCON->PRESETCTRL0 &= ~(SYSCON_PRESETCTRL0_GPIO0_RST_N_MASK);  // reset GPIO(bit=0)
+	SYSCON->PRESETCTRL0 |= (SYSCON_PRESETCTRL0_GPIO0_RST_N_MASK);  // clear reset (bit=1)
+
+	// Config  LED (GPIO 9) for output
+	// Remember: only bits set to 1 have an effect on DIRCLR and DIRSET registers.
+	//    bits cleared to 0 are ignored.
+	// Therefore, use DIRCLR to select input and DIRSET to select output
+
+	 //GPIO->CLR[0] = (1UL<<LED_USER1);   // LED is on BLUE***
+	 //GPIO->DIRSET[0] = (1UL<<LED_USER1); // output (LED_USER1)
+
+	//GPIO->CLR[0] = (1UL<<LED_USER2);   // LED is on GREEN***
+	//GPIO->DIRSET[0] = (1UL<<LED_USER2); // output (LED_USER2)
+
+	GPIO ->CLR[0] = (1UL<<LED_USER3);  //RED
+	GPIO ->DIRSET[0] = (1UL<<LED_USER3);  //RED
+	// ----------------------- end of GPIO setup ---------------
+
+	// Enable IRQs (SysTick & global)
+	NVIC_EnableIRQ(SysTick_IRQn);
+	// SysTick IRQs are on
+	__enable_irq();  // global
+
+	// Enter an infinite loop, check the pushbutton on GPIO8 (button "USER")
+	while(1) {
+		asm("NOP");
+			 }
+		return 0 ;
+	}
+
+// ------------- ISR for the SysTick
+// SysTick has triggered an IRQ. Toggle an LED in response
+// If SysTick_Config(2400000) then we have 2400000 ticks b/w
+// IRQs.  That's 0.2 sec @ an FRO clock of 12 MHz.
+// The LED period is 2*IRQ_Freq = 0.4 sec b/c we use toggling.
+void SysTick_Handler(void) {
+	// Toggle the LED with the NOT register.
+
+	//GPIO->NOT[0] = (1UL<<LED_USER1); //***BLUE* 8
+	//GPIO->NOT[0] = (1UL<<LED_USER2); //***GREEN* 9
+	GPIO ->NOT[0] = (1UL<<LED_USER3); //RED
+
+}
+
