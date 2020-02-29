@@ -1,0 +1,21 @@
+// EECS 3215 LabD part3
+#include "LPC802.h"
+int main(void) {
+
+	// Turn on the GPIO system.
+	SYSCON->SYSAHBCLKCTRL0 |= SYSCON_SYSAHBCLKCTRL0_GPIO0_MASK;
+
+	//set GPIO 9 to be output (bit 9 is a 1)
+	GPIO ->DIRSET[0] = 0b100000000;     //0b100000000 - blue  0b010000000 - green
+
+	//loop infinte
+	while(1)
+	{
+		// bit 9 is responsible for GPIO 9
+		GPIO ->SET[0] = 0b100000000; //OFF
+		GPIO ->CLR[0] = 0b100000000; //ON
+	}
+
+} // end
+// F6 is step over
+
